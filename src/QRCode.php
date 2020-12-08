@@ -1,4 +1,4 @@
-<?php
+ <?php
 
 namespace Nexy\Pix;
 
@@ -17,6 +17,7 @@ define('GUI', 0);
 define('CHAVE', 1);
 define('INFO', 2);
 define('TXID', 5);
+define('LOCATION', 25);
 
 define('METHOD_ONCE', 12);
 
@@ -27,7 +28,7 @@ define('METHOD_ONCE', 12);
  * @see https://www.bcb.gov.br/content/estabilidadefinanceira/forumpireunioes/AnexoI-PadroesParaIniciacaodoPix.pdf
  *
  * @author Ricardo Coelho <ricardo@nexy.com.br>
- * 
+ *
  * @package Nexy\Pix
  */
 class QRCode
@@ -39,7 +40,6 @@ class QRCode
     {
         $merchant_account_information = new Service\EMV();
         $merchant_account_information->set(GUI, 'br.gov.bcb.pix');
-        $merchant_account_information->set(CHAVE, '');
 
         $additional_data_field_template = new Service\EMV();
         $additional_data_field_template->set(TXID, '***');
@@ -78,7 +78,7 @@ class QRCode
      */
     public function moeda($moeda)
     {
-        $this->emv->set(TRANSACTION_CURRENCY, strpad($moeda, 3, '0', STR_PAD_LEFT));
+        $this->emv->set(TRANSACTION_CURRENCY, str_pad($moeda, 3, '0', STR_PAD_LEFT));
         return $this;
     }
 
@@ -162,6 +162,37 @@ class QRCode
     }
 
     /**
+     * Updates the location
+     *
+     * @param string $location
+     * @return QRCode This object for chaining
+     */
+    public function location($location)
+    {
+        $location = str_replace(array('http://','https://'), '', $location);
+        $merchant_account_information = $this->emv->get(MERCHANT_ACCOUNT_INFORMATION);
+        $merchant_account_information->set(LOCATION, $location);
+        $this->emv->set(MERCHANT_ACCOUNT_INFORMATION, $merchant_account_information);
+        return $this;
+    }
+
+    /**
+     * Updates the method_once flag
+     *
+     * @param bool $status
+     * @return QRCode This object for chaining
+     */
+    public function unico($status)
+    {
+        if ($status) {
+            $this->emv->set(POINT_OF_INITIATION_METHOD, METHOD_ONCE);
+        } else {
+            $this->emv->unset(POINT_OF_INITIATION_METHOD);
+        }
+        return $this;
+    }
+
+    /**
      * Updates the merchant category code
      *
      * @param string $codigoCategoria 4-digit string
@@ -170,7 +201,7 @@ class QRCode
     public function codigoCategoria($codigoCategoria)
     {
         $this->emv->set(
-            MERCHANT_CATEGORY_CODE, 
+            MERCHANT_CATEGORY_CODE,
             mb_substr(strpad($codigoCategoria, 4, '0', STR_PAD_LEFT), 0, 4)
         );
         return $this;
@@ -199,26 +230,4 @@ class QRCode
     {
         return 'https://pix.bcb.gov.br/qr/' . base64_encode($this->toString());
     }
-
-    /**
-     * Renders and saves the QRCode image to a file
-     *
-     * @param string $filename The output filename
-     * @return QRCode This object for chaining
-     */
-    public function toFile($filename)
-    {
-        $options = new \chillerlan\QRCode\QROptions([
-            'version' => \chillerlan\QRCode\QRCode::VERSION_AUTO,
-            'outputType' => \chillerlan\QRCode\QRCode::OUTPUT_IMAGE_PNG,
-            'eccLevel' => \chillerlan\QRCode\QRCode::ECC_L,
-            'imageBase64' => false,
-            'imageTransparent' => false,
-        ]);
-        $qrCode = new \chillerlan\QRCode\QRCode($options);
-        $image = $qrCode->render($this->__toString());
-        file_put_contents($filename, $image);
-
-        return $this;
-    }    
 }
