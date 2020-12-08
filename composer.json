@@ -2,7 +2,6 @@
     "name": "jrodella/pix",
     "description": "Isso é uma fork de: nexy/pix",
     "type": "library",
-    "version": "1.0.0",
     "license": "GPL-3.0-only",
     "authors": [
         {
@@ -22,8 +21,5 @@
         "psr-4": {
             "Nexy\\Pix\\": "src/"
         }
-    },
-    "require": {
-        "chillerlan/php-qrcode": "^4.3"
     }
 }
